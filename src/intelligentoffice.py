@@ -54,21 +54,44 @@ class IntelligentOffice:
         self.buzzer_on = False
 
     def check_quadrant_occupancy(self, pin: int) -> bool:
-        # To be implemented
-        pass
+        if pin not in [self.INFRARED_PIN1, self.INFRARED_PIN2, self.INFRARED_PIN3, self.INFRARED_PIN4]:
+            raise IntelligentOfficeError("Pin not in the board")
+        return GPIO.input(pin)
 
     def manage_blinds_based_on_time(self) -> None:
-        # To be implemented
-        pass
+        current_time = self.rtc.read_datetime()
+        if 8 <= current_time.hour < 20:
+            duty_cycle = 180/18 + 2
+            self.change_servo_angle(duty_cycle)
+            self.blinds_open = True
+        else:
+            duty_cycle = 0 / 18 + 2
+            self.change_servo_angle(duty_cycle)
+            self.blinds_open = False
 
     def manage_light_level(self) -> None:
-        # To be implemented
-        pass
+        vacant = False
+        if not GPIO.input(self.INFRARED_PIN1) and not GPIO.input(self.INFRARED_PIN2) and not GPIO.input(self.INFRARED_PIN3) and not GPIO.input(self.INFRARED_PIN4):
+            vacant = True
 
+        if not vacant:
+            if self.ambient_light_sensor.lux < 500:
+                GPIO.output(self.LED_PIN, GPIO.HIGH)
+                self.light_on = True
+            elif self.ambient_light_sensor.lux > 550:
+                GPIO.output(self.LED_PIN, GPIO.LOW)
+                self.light_on = False
+        else:
+            GPIO.output(self.LED_PIN, GPIO.LOW)
+            self.light_on = False
 
     def monitor_air_quality(self) -> None:
-        # To be implemented
-        pass
+        if GPIO.input(self.GAS_PIN):
+            GPIO.output(self.BUZZER_PIN, GPIO.HIGH)
+            self.buzzer_on = True
+        else:
+            GPIO.output(self.BUZZER_PIN, GPIO.LOW)
+            self.buzzer_on = False
 
     def change_servo_angle(self, duty_cycle):
         """
@@ -83,3 +106,4 @@ class IntelligentOffice:
 
 class IntelligentOfficeError(Exception):
     pass
+
